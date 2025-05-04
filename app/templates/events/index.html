@@ -14,6 +14,54 @@
     </div>
 </div>
 
+<!-- Recommended Events Section -->
+{% if recommended_events %}
+<div class="recommended-events-section">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="fas fa-star"></i> Recommended for You</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for event in recommended_events %}
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-sm card-inner">
+                        {% if event.photo_url %}
+                        <img src="{{ event.photo_url }}" class="card-img-top" alt="{{ event.name }}" style="height: 150px; object-fit: cover;">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='images/event-placeholder.jpg') }}" class="card-img-top" alt="{{ event.name }}" style="height: 150px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.name }}</h5>
+                            <p class="event-meta small">
+                                <i class="far fa-calendar-alt"></i> {{ event.date_time.strftime('%d %b %Y, %H:%M') }}<br>
+                                <i class="fas fa-map-marker-alt"></i> {{ event.location.name }}<br>
+                                <i class="fas fa-users"></i> By {{ event.club.name }}
+                            </p>
+                            <div class="mt-2">
+                                {% if event.is_free() %}
+                                <span class="badge badge-success">Free Entry</span>
+                                {% else %}
+                                <span class="badge badge-info">{{ event.price }} KZT</span>
+                                {% endif %}
+                                
+                                {% if event.genres and event.genres[0] %}
+                                <span class="badge badge-primary">{{ event.genres[0].name }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline-info btn-block">View Details</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Filter Form -->
 <div class="collapse mb-4" id="filterCollapse">
     <div class="card">

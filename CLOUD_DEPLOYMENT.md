@@ -5,7 +5,7 @@ This guide provides simple steps to deploy SDU Event Hub on a Google Cloud VM us
 ## Prerequisites
 
 - Google Cloud account with Compute Engine access
-- VM instance with at least 2 vCPUs and 4GB RAM
+- VM instance with at least 2 vCPUs and 4GB RAM (e2-medium or larger)
 - Basic knowledge of Linux commands
 
 ## Deployment Steps
@@ -78,8 +78,8 @@ EXTERNAL_IP=$(curl -s ifconfig.me)
 cat > .env << EOF
 SECRET_KEY=$(openssl rand -hex 24)
 FLASK_ENV=production
-BASE_URL=http://$EXTERNAL_IP
-TELEGRAM_BOT_TOKEN=8100465500:AAFq0ZVr1EhZUuUksRc3nfUXJUZi2pIXgOI
+BASE_URL=http://$EXTERNAL_IP:5004
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_BOT_USERNAME=SDUEventHubBot
 EOF
 
@@ -157,7 +157,12 @@ docker-compose up -d --build
 
 ```bash
 # Backup the SQLite database
-docker-compose cp web:/app/instance/app.db ./backup_$(date +%Y%m%d).db
+docker cp sdu_event_hub:/app/instance/app.db ./backup_$(date +%Y%m%d).db
+
+# Backup uploaded files
+docker cp sdu_event_hub:/app/app/static/uploads ./uploads_backup_$(date +%Y%m%d)
+docker cp sdu_event_hub:/app/app/static/profile_pics ./profile_pics_backup_$(date +%Y%m%d)
+docker cp sdu_event_hub:/app/app/static/event_pics ./event_pics_backup_$(date +%Y%m%d)
 ```
 
 ## Troubleshooting
@@ -169,6 +174,12 @@ If you encounter database errors:
 ```bash
 # Check database file permissions
 docker-compose exec web ls -la /app/instance/
+
+# Verify database owner and path
+docker-compose exec web bash -c "echo 'SQLite path:' && find /app -name app.db"
+
+# Check database file size and integrity
+docker-compose exec web bash -c "ls -lh /app/instance/app.db && sqlite3 /app/instance/app.db 'PRAGMA integrity_check;'"
 
 # Manually initialize the database
 docker-compose exec web python init_db.py
@@ -183,25 +194,54 @@ docker-compose exec web python create_share_tokens_table.py
 # Check container logs
 docker-compose logs web
 
+# Check for port conflicts
+sudo netstat -tulpn | grep 5004
+
+# Inspect container state
+docker inspect sdu_event_hub
+
 # Rebuild the container
 docker-compose down
 docker-compose build --no-cache
 docker-compose up -d
 ```
 
-## Shareable Links Feature
+### Application Shows Error Page
 
-The application supports shareable user profile links. To use this feature:
+```bash
+# Check application logs
+docker-compose logs web
 
-1. Log in as an admin user
-2. Go to User Management
-3. For any user, click "Generate" to create a shareable link
-4. The link will be accessible without login and display the user's profile information and tickets
+# Restart the web container
+docker-compose restart web
+
+# Verify the database connection
+docker-compose exec web python -c "
+from app import create_app, db
+app = create_app()
+with app.app_context():
+    try:
+        db.session.execute('SELECT 1')
+        print('Database connection successful!')
+    except Exception as e:
+        print(f'Database connection failed: {e}')
+"
+```
+
+## Performance Optimization
+
+For production deployment, consider these optimizations:
+
+1. **PostgreSQL Database**: Enable PostgreSQL in the docker-compose.yml file for better performance with larger datasets
+2. **Gunicorn Workers**: Adjust the worker count in docker-entrypoint.sh based on your VM's CPU cores (typically workers = 2 × cores + 1)
+3. **Static Files**: Consider setting up a CDN for static files in a production environment
+4. **Memory Usage**: Monitor memory usage and adjust VM size as needed
 
 ## Security Recommendations
 
 1. Change the default admin password immediately
-2. Update `SECRET_KEY` in your `.env` file
+2. Update `SECRET_KEY` in your `.env` file to a strong random value
 3. Set up Google Cloud Firewall rules to limit access to your application
-4. Regularly backup your database
+4. Regularly backup your database and files
 5. Keep your system and Docker images updated
+6. Consider setting up HTTPS with a reverse proxy like Nginx and Let's Encrypt

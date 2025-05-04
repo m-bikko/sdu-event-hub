@@ -456,6 +456,50 @@ a:hover {
     box-shadow: 0 0.75rem 2rem rgba(0, 0, 0, 0.12);
 }
 
+/* Recommended Events */
+.recommended-events-section {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.recommended-events-section .card {
+    border-color: var(--info-color);
+    box-shadow: 0 0.25rem 1rem rgba(54, 185, 204, 0.15);
+}
+
+.recommended-events-section .card-header {
+    background-color: var(--info-color);
+    color: white;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+.recommended-events-section .card-header h4 {
+    margin: 0;
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+.recommended-events-section .card-header i {
+    margin-right: 10px;
+    color: #ffdf7e;
+}
+
+.recommended-events-section .card-body {
+    padding: 1.5rem;
+}
+
+.recommended-events-section .card-inner {
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.recommended-events-section .card-inner:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1);
+}
+
 /* Notifications */
 .notification-dropdown {
     min-width: 320px;

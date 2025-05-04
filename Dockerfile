@@ -11,6 +11,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    postgresql-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,15 +25,18 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY . .
 
 # Create necessary directories with proper permissions
-RUN mkdir -p /app/instance /app/app/static/profile_pics /app/app/static/event_pics \
-    /app/app/static/qr_codes /app/app/static/uploads && \
+RUN mkdir -p /app/instance \
+    /app/app/static/profile_pics \
+    /app/app/static/event_pics \
+    /app/app/static/qr_codes \
+    /app/app/static/uploads && \
     chmod -R 755 /app/app/static /app/instance
 
 # Setup entrypoint script
 COPY docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
 
-# Create non-root user
+# Create non-root user for security
 RUN useradd --create-home appuser
 RUN chown -R appuser:appuser /app
 USER appuser
