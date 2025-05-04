@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+
+{% block title %}Club Head Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ club.name }} Dashboard</h1>
+            <p class="text-muted">Manage your club's events, bookings, and members.</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{{ url_for('club_head.create_event') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus-circle"></i> Create Event
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Stats Cards -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ member_count }}</h3>
+                    <p class="card-text">Members</p>
+                    <a href="{{ url_for('club_head.members') }}" class="btn btn-outline-light btn-sm">Manage Members</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ upcoming_events|length }}</h3>
+                    <p class="card-text">Upcoming Events</p>
+                    <a href="{{ url_for('club_head.events') }}" class="btn btn-outline-light btn-sm">View All Events</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ bookings|length }}</h3>
+                    <p class="card-text">Recent Bookings</p>
+                    <a href="{{ url_for('club_head.bookings') }}" class="btn btn-outline-light btn-sm">Manage Bookings</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Upcoming Events -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Upcoming Events</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_events %}
+                        <ul class="list-group list-group-flush">
+                            {% for event in upcoming_events %}
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ event.name }}</h6>
+                                        <div class="text-muted small">
+                                            <i class="far fa-calendar"></i> {{ event.date_time.strftime('%Y-%m-%d %H:%M') }}
+                                            <br>
+                                            <i class="fas fa-map-marker-alt"></i> {{ event.location.name }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-{{ 'success' if event.is_free() else 'info' }}">
+                                            {{ 'Free' if event.is_free() else event.price ~ ' KZT' }}
+                                        </span>
+                                        <a href="{{ url_for('club_head.event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline-primary ml-2">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="card-body">
+                            <p class="text-muted">No upcoming events scheduled.</p>
+                            <a href="{{ url_for('club_head.create_event') }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-plus-circle"></i> Create an Event
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if upcoming_events %}
+                <div class="card-footer">
+                    <a href="{{ url_for('club_head.events') }}" class="btn btn-outline-primary btn-sm">View All Events</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Bookings -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Recent Bookings</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if bookings %}
+                        <ul class="list-group list-group-flush">
+                            {% for booking in bookings %}
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ booking.location.name }}</h6>
+                                        <div class="text-muted small">
+                                            <i class="far fa-calendar"></i> {{ booking.start_time.strftime('%Y-%m-%d') }}
+                                            <br>
+                                            <i class="fas fa-clock"></i> {{ booking.start_time.strftime('%H:%M') }} - {{ booking.end_time.strftime('%H:%M') }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-{{ 'success' if booking.status == 'confirmed' else 'warning' }}">
+                                            {{ booking.status|capitalize }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="card-body">
+                            <p class="text-muted">No recent bookings found.</p>
+                            <a href="{{ url_for('club_head.create_booking') }}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-plus-circle"></i> Reserve a Location
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if bookings %}
+                <div class="card-footer">
+                    <a href="{{ url_for('club_head.bookings') }}" class="btn btn-outline-info btn-sm">View All Bookings</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Past Events with Reviews -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Past Events</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if past_events %}
+                        <ul class="list-group list-group-flush">
+                            {% for event in past_events %}
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ event.name }}</h6>
+                                        <div class="text-muted small">
+                                            <i class="far fa-calendar"></i> {{ event.date_time.strftime('%Y-%m-%d %H:%M') }}
+                                            <br>
+                                            <i class="fas fa-map-marker-alt"></i> {{ event.location.name }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        {% if event.rating > 0 %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-star"></i> {{ event.rating|round(1) }}/5 ({{ event.reviews|length }} reviews)
+                                        </span>
+                                        {% endif %}
+                                        <a href="{{ url_for('club_head.event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline-secondary ml-2">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="card-body">
+                            <p class="text-muted">No past events found.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}

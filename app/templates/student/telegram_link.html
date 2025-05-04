@@ -1,0 +1,162 @@
+{% extends "layout.html" %}
+
+{% block title %}Connect Telegram - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Connect Telegram</h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <img src="{{ url_for('static', filename='images/telegram-logo.png') }}" alt="Telegram Logo" class="img-fluid" style="max-width: 100px;">
+                </div>
+                
+                <div class="alert alert-info">
+                    <p><strong>Why connect Telegram?</strong></p>
+                    <ul>
+                        <li>Receive instant notifications about new events from clubs you follow</li>
+                        <li>Get reminders 24 hours and 1 hour before events you're registered for</li>
+                        <li>Receive ticket confirmations directly on your phone</li>
+                        <li>Browse upcoming events and check your tickets on the go</li>
+                    </ul>
+                </div>
+                
+                {% if current_user.telegram_chat_id %}
+                <!-- Already connected -->
+                <div class="alert alert-success">
+                    <p class="mb-0"><i class="fas fa-check-circle"></i> Your Telegram account is already connected!</p>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button id="unlink-telegram-btn" class="btn btn-danger">Disconnect Telegram</button>
+                </div>
+                {% else %}
+                <!-- Not connected -->
+                <div class="text-center">
+                    <button id="generate-code-btn" class="btn btn-primary btn-lg">Generate Connection Code</button>
+                </div>
+                
+                <div id="telegram-code-container" class="mt-4" style="display: none;">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">Your Connection Code</h4>
+                            <p class="card-text">Send this code to our Telegram bot:</p>
+                            <h2 class="my-3"><code id="telegram-code">------</code></h2>
+                            <p>Open Telegram and message <strong><span id="bot-username">@SDUEventHubBot</span></strong></p>
+                            <p class="text-muted small">This code will expire after use. You will receive a confirmation message when your account is connected.</p>
+                            
+                            <div class="mt-3">
+                                <a id="telegram-link" href="https://t.me/SDUEventHubBot" target="_blank" class="btn btn-info">
+                                    <i class="fab fa-telegram"></i> Open Telegram
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('student.profile') }}" class="btn btn-secondary">Back to Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Generate code button
+        const generateCodeBtn = document.getElementById('generate-code-btn');
+        const telegramCodeContainer = document.getElementById('telegram-code-container');
+        const telegramCode = document.getElementById('telegram-code');
+        const botUsername = document.getElementById('bot-username');
+        const telegramLink = document.getElementById('telegram-link');
+        
+        if (generateCodeBtn) {
+            generateCodeBtn.addEventListener('click', function() {
+                // Disable button and show loading state
+                generateCodeBtn.disabled = true;
+                generateCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generating...';
+                
+                // Fetch connection code
+                fetch('{{ url_for("telegram.link_telegram") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button state
+                    generateCodeBtn.disabled = false;
+                    generateCodeBtn.innerHTML = 'Generate Connection Code';
+                    
+                    if (data.code) {
+                        // Display the code
+                        telegramCode.textContent = data.code;
+                        botUsername.textContent = '@' + data.bot_username;
+                        telegramLink.href = 'https://t.me/' + data.bot_username;
+                        telegramCodeContainer.style.display = 'block';
+                        
+                        // Hide the generate button
+                        generateCodeBtn.style.display = 'none';
+                    } else if (data.error) {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    generateCodeBtn.disabled = false;
+                    generateCodeBtn.innerHTML = 'Generate Connection Code';
+                    alert('An error occurred. Please try again later.');
+                });
+            });
+        }
+        
+        // Unlink button
+        const unlinkBtn = document.getElementById('unlink-telegram-btn');
+        
+        if (unlinkBtn) {
+            unlinkBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to disconnect your Telegram account? You will no longer receive notifications.')) {
+                    // Disable button and show loading state
+                    unlinkBtn.disabled = true;
+                    unlinkBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Disconnecting...';
+                    
+                    // Send unlink request
+                    fetch('{{ url_for("telegram.unlink_telegram") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Reload the page to show unlinked state
+                            window.location.reload();
+                        } else if (data.error) {
+                            alert('Error: ' + data.error);
+                            unlinkBtn.disabled = false;
+                            unlinkBtn.innerHTML = 'Disconnect Telegram';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        unlinkBtn.disabled = false;
+                        unlinkBtn.innerHTML = 'Disconnect Telegram';
+                        alert('An error occurred. Please try again later.');
+                    });
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

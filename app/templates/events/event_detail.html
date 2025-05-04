@@ -1,0 +1,323 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ event.name }} - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            {% if event.photo_url %}
+            <img src="{{ event.photo_url }}" class="card-img-top" alt="{{ event.name }}" style="max-height: 300px; object-fit: cover;">
+            {% else %}
+            <img src="{{ url_for('static', filename='images/event-placeholder.jpg') }}" class="card-img-top" alt="{{ event.name }}" style="max-height: 300px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title">{{ event.name }}</h1>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Organized by <a href="{{ url_for('events.club_detail', club_id=event.club.id) }}">{{ event.club.name }}</a></span>
+                    {% if event.rating > 0 %}
+                    <div>
+                        <span class="badge badge-warning p-2">
+                            <i class="fas fa-star"></i> {{ event.rating|round(1) }}/5
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><i class="far fa-calendar-alt"></i> <strong>Date:</strong> {{ event.date_time.strftime('%d %B %Y') }}</p>
+                        <p><i class="far fa-clock"></i> <strong>Time:</strong> {{ event.date_time.strftime('%H:%M') }}</p>
+                        <p><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ event.location.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p>
+                            <i class="fas fa-ticket-alt"></i> <strong>Price:</strong> 
+                            {% if event.is_free() %}
+                            <span class="text-success">Free Entry</span>
+                            {% else %}
+                            <span class="text-info">{{ event.price }} KZT</span>
+                            {% endif %}
+                        </p>
+                        <p>
+                            <i class="fas fa-users"></i> <strong>Attendees:</strong> 
+                            {% if event.max_attendees %}
+                            {{ event.tickets|length }}/{{ event.max_attendees }}
+                            {% else %}
+                            {{ event.tickets|length }} registered
+                            {% endif %}
+                        </p>
+                        <p>
+                            <i class="fas fa-tag"></i> <strong>Type:</strong> 
+                            {% if event.type == 'club' %}
+                            <span class="badge badge-info">Club Event</span>
+                            {% else %}
+                            <span class="badge badge-primary">General Event</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if event.genres or event.tags %}
+                <div class="mb-4">
+                    {% for genre in event.genres %}
+                    <span class="badge badge-primary mr-1">{{ genre.name }}</span>
+                    {% endfor %}
+                    {% for tag in event.tags %}
+                    <span class="badge badge-secondary mr-1">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <h4>Description</h4>
+                <p class="card-text">{{ event.description|safe }}</p>
+            </div>
+        </div>
+        
+        {% if event.reviews %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Reviews</h4>
+            </div>
+            <div class="card-body">
+                {% for review in event.reviews %}
+                <div class="media mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                    {% if review.user.photo_url %}
+                    <img src="{{ review.user.photo_url }}" class="mr-3 rounded-circle" alt="{{ review.user.get_full_name() }}" style="width: 50px; height: 50px; object-fit: cover;">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/default-profile.png') }}" class="mr-3 rounded-circle" alt="{{ review.user.get_full_name() }}" style="width: 50px; height: 50px; object-fit: cover;">
+                    {% endif %}
+                    <div class="media-body">
+                        <h5 class="mt-0">{{ review.user.get_full_name() }}</h5>
+                        <div class="mb-2">
+                            {% for i in range(5) %}
+                            {% if i < review.rating %}
+                            <i class="fas fa-star text-warning"></i>
+                            {% else %}
+                            <i class="far fa-star text-warning"></i>
+                            {% endif %}
+                            {% endfor %}
+                            <small class="text-muted ml-2">{{ review.created_at.strftime('%d %b %Y') }}</small>
+                        </div>
+                        <p>{{ review.comment }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Registration/Ticket Panel -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Registration</h4>
+            </div>
+            <div class="card-body">
+                {% if event.is_full() %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i> This event is fully booked.
+                </div>
+                {% elif event.date_time < current_time %}
+                <div class="alert alert-secondary">
+                    <i class="fas fa-clock"></i> This event has already passed.
+                </div>
+                {% elif user_has_ticket %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> You are registered for this event!
+                </div>
+                <a href="{{ url_for('student.tickets') }}" class="btn btn-outline-primary btn-block">View Your Tickets</a>
+                {% else %}
+                <p>Join this event by clicking the button below.</p>
+                {% if event.is_free() %}
+                    <form id="free-event-register-form" action="{{ url_for('events.register_for_event', event_id=event.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button id="register-free-btn" type="submit" class="btn btn-primary btn-block register-event-btn" data-event-id="{{ event.id }}">
+                            Register for Free
+                        </button>
+                    </form>
+                    <script>
+                        // Add event listener for the free event registration
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const registerFreeBtn = document.getElementById('register-free-btn');
+                            const freeEventForm = document.getElementById('free-event-register-form');
+                            
+                            if (registerFreeBtn && freeEventForm) {
+                                freeEventForm.addEventListener('submit', function(e) {
+                                    // Show loading state
+                                    registerFreeBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Processing...';
+                                    registerFreeBtn.disabled = true;
+                                    
+                                    // Add a slight delay to show the loading state (will still submit the form)
+                                    setTimeout(() => {
+                                        // Form will submit automatically after this timeout
+                                    }, 500);
+                                });
+                            }
+                        });
+                    </script>
+                {% else %}
+                    <button id="buy-ticket-btn-{{ event.id }}" class="btn btn-primary btn-block buy-ticket-btn" data-event-id="{{ event.id }}">
+                        Buy Ticket - {{ event.price }} KZT
+                    </button>
+                    <script>
+                        const stripePublicKey = "{{ config.STRIPE_PUBLISHABLE_KEY }}";
+                    </script>
+                {% endif %}
+                {% endif %}
+                
+                {% if event.max_attendees %}
+                <div class="progress mt-3">
+                    {% set percentage = (event.tickets|length / event.max_attendees) * 100 %}
+                    <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ event.tickets|length }}/{{ event.max_attendees }}</div>
+                </div>
+                <small class="text-muted">Available spots: {{ event.max_attendees - event.tickets|length }}</small>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Organizer Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Organizer</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if event.club.photo_url %}
+                    <img src="{{ event.club.photo_url }}" class="rounded-circle" alt="{{ event.club.name }}" style="width: 100px; height: 100px; object-fit: cover;">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/default-club.png') }}" class="rounded-circle" alt="{{ event.club.name }}" style="width: 100px; height: 100px; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <h5 class="text-center mb-3">{{ event.club.name }}</h5>
+                <p class="text-center">
+                    {% if event.club.rating > 0 %}
+                    <span class="badge badge-warning">
+                        <i class="fas fa-star"></i> {{ event.club.rating|round(1) }}/5
+                    </span>
+                    {% endif %}
+                </p>
+                <p class="small">{{ event.club.description|truncate(100) }}</p>
+                <a href="{{ url_for('events.club_detail', club_id=event.club.id) }}" class="btn btn-outline-primary btn-sm btn-block">View Club</a>
+                
+                {% if current_user.is_authenticated and event.club not in current_user.club_subscriptions %}
+                <form id="event-club-subscribe-form" action="{{ url_for('events.subscribe_to_club', club_id=event.club.id) }}" method="POST" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button id="event-subscribe-btn" type="submit" class="btn btn-outline-secondary btn-sm btn-block event-club-subscription-btn">
+                        <i class="fas fa-bell"></i> Subscribe to Updates
+                    </button>
+                </form>
+                {% elif current_user.is_authenticated %}
+                <form id="event-club-unsubscribe-form" action="{{ url_for('events.subscribe_to_club', club_id=event.club.id) }}" method="POST" class="mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button id="event-unsubscribe-btn" type="submit" class="btn btn-outline-danger btn-sm btn-block event-club-subscription-btn">
+                        <i class="fas fa-bell-slash"></i> Unsubscribe
+                    </button>
+                </form>
+                {% endif %}
+                
+                <script>
+                    // Add event listeners for event page club subscription buttons
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const eventSubscriptionButtons = document.querySelectorAll('.event-club-subscription-btn');
+                        
+                        eventSubscriptionButtons.forEach(button => {
+                            const form = button.closest('form');
+                            if (form) {
+                                form.addEventListener('submit', function() {
+                                    // Save original button content
+                                    const originalHTML = button.innerHTML;
+                                    
+                                    // Show loading state
+                                    if (button.id === 'event-subscribe-btn') {
+                                        button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Subscribing...';
+                                    } else {
+                                        button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Unsubscribing...';
+                                    }
+                                    button.disabled = true;
+                                    
+                                    // Set a timeout to reset the button if the form doesn't submit
+                                    setTimeout(() => {
+                                        // This will only execute if the page doesn't navigate away
+                                        if (document.body.contains(button)) {
+                                            button.innerHTML = originalHTML;
+                                            button.disabled = false;
+                                        }
+                                    }, 5000);
+                                });
+                            }
+                        });
+                    });
+                </script>
+            </div>
+        </div>
+        
+        <!-- Similar Events -->
+        {% if similar_events %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Similar Events</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for similar in similar_events %}
+                <li class="list-group-item">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0 mr-3">
+                            {% if similar.photo_url %}
+                            <img src="{{ similar.photo_url }}" alt="{{ similar.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='images/event-placeholder.jpg') }}" alt="{{ similar.name }}" style="width: 50px; height: 50px; object-fit: cover;">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="mb-0"><a href="{{ url_for('events.event_detail', event_id=similar.id) }}">{{ similar.name }}</a></h6>
+                            <small class="text-muted">
+                                {{ similar.date_time.strftime('%d %b %Y') }} | {{ similar.location.name }}
+                            </small>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add to calendar functionality (placeholder)
+        const addToCalendarBtn = document.getElementById('add-to-calendar');
+        if (addToCalendarBtn) {
+            addToCalendarBtn.addEventListener('click', function(e) {
+                // This would typically generate and download an .ics file
+                // or open a Google Calendar link
+                alert('Calendar integration will be available soon!');
+            });
+        }
+        
+        // Share functionality (placeholder)
+        const shareBtn = document.getElementById('share-event');
+        if (shareBtn) {
+            shareBtn.addEventListener('click', function(e) {
+                if (navigator.share) {
+                    navigator.share({
+                        title: '{{ event.name }}',
+                        text: 'Check out this event: {{ event.name }}',
+                        url: window.location.href,
+                    })
+                    .catch(console.error);
+                } else {
+                    // Fallback for browsers that don't support Web Share API
+                    alert('Share this page URL: ' + window.location.href);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

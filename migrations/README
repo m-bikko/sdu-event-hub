@@ -1,0 +1,33 @@
+Generic single-database configuration with SQLAlchemy.
+
+# Running migrations
+
+To apply this migration, run:
+
+```bash
+flask db upgrade
+```
+
+This will add the share_token field to the User model, which is required for the shareable public profile links.
+
+# Creating new migrations
+
+To create new migrations:
+
+```bash
+flask db migrate -m "Description of changes"
+```
+
+Then review the generated migration file and run:
+
+```bash
+flask db upgrade
+```
+
+# Rolling back migrations
+
+To roll back a migration:
+
+```bash
+flask db downgrade
+```

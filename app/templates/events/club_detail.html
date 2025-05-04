@@ -1,0 +1,213 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ club.name }} - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            {% if club.photo_url %}
+            <img src="{{ club.photo_url }}" class="card-img-top" alt="{{ club.name }}" style="height: 250px; object-fit: cover;">
+            {% else %}
+            <img src="{{ url_for('static', filename='images/default-club.png') }}" class="card-img-top" alt="{{ club.name }}" style="height: 250px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title">{{ club.name }}</h1>
+                {% if club.rating > 0 %}
+                <div class="mb-3">
+                    {% for i in range(5) %}
+                    {% if i < club.rating|round %}
+                    <i class="fas fa-star text-warning"></i>
+                    {% elif i < club.rating and i >= club.rating|round %}
+                    <i class="fas fa-star-half-alt text-warning"></i>
+                    {% else %}
+                    <i class="far fa-star text-warning"></i>
+                    {% endif %}
+                    {% endfor %}
+                    <span class="ml-1">{{ club.rating|round(1) }}/5</span>
+                </div>
+                {% endif %}
+                
+                <h4>About</h4>
+                <p class="card-text">{{ club.description|safe }}</p>
+                
+                {% if club.head %}
+                <h4>Club Head</h4>
+                <div class="media mb-4">
+                    {% if club.head.photo_url %}
+                    <img src="{{ club.head.photo_url }}" class="mr-3 rounded-circle" alt="{{ club.head.get_full_name() }}" style="width: 64px; height: 64px; object-fit: cover;">
+                    {% else %}
+                    <img src="{{ url_for('static', filename='images/default-profile.png') }}" class="mr-3 rounded-circle" alt="{{ club.head.get_full_name() }}" style="width: 64px; height: 64px; object-fit: cover;">
+                    {% endif %}
+                    <div class="media-body">
+                        <h5 class="mt-0">{{ club.head.get_full_name() }}</h5>
+                        <p class="mb-0">{{ club.head.email }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if current_user.is_authenticated %}
+                <div class="d-flex justify-content-between mt-4">
+                    {% if not is_subscribed %}
+                    <form id="club-subscribe-form" action="{{ url_for('events.subscribe_to_club', club_id=club.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button id="subscribe-btn" type="submit" class="btn btn-outline-primary club-subscription-btn">
+                            <i class="fas fa-bell"></i> Subscribe to Updates
+                        </button>
+                    </form>
+                    {% else %}
+                    <form id="club-unsubscribe-form" action="{{ url_for('events.subscribe_to_club', club_id=club.id) }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button id="unsubscribe-btn" type="submit" class="btn btn-outline-danger club-subscription-btn">
+                            <i class="fas fa-bell-slash"></i> Unsubscribe
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <script>
+                        // Add event listeners for club subscription buttons
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const subscriptionButtons = document.querySelectorAll('.club-subscription-btn');
+                            
+                            subscriptionButtons.forEach(button => {
+                                const form = button.closest('form');
+                                if (form) {
+                                    form.addEventListener('submit', function() {
+                                        // Save original button content
+                                        const originalHTML = button.innerHTML;
+                                        
+                                        // Show loading state
+                                        if (button.id === 'subscribe-btn') {
+                                            button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Subscribing...';
+                                        } else {
+                                            button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Unsubscribing...';
+                                        }
+                                        button.disabled = true;
+                                        
+                                        // Set a timeout to reset the button if the form doesn't submit
+                                        setTimeout(() => {
+                                            // This will only execute if the page doesn't navigate away
+                                            if (document.body.contains(button)) {
+                                                button.innerHTML = originalHTML;
+                                                button.disabled = false;
+                                            }
+                                        }, 5000);
+                                    });
+                                }
+                            });
+                        });
+                    </script>
+                    
+                    {% if is_member %}
+                    <span class="badge badge-success p-2 align-self-center">
+                        <i class="fas fa-user-check"></i> You are a member of this club
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <h2 class="mb-3">Upcoming Events</h2>
+        
+        {% if upcoming_events %}
+        <div class="list-group mb-4">
+            {% for event in upcoming_events %}
+            <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <div class="d-flex">
+                        <div class="mr-3">
+                            {% if event.photo_url %}
+                            <img src="{{ event.photo_url }}" alt="{{ event.name }}" style="width: 80px; height: 80px; object-fit: cover;">
+                            {% else %}
+                            <img src="{{ url_for('static', filename='images/event-placeholder.jpg') }}" alt="{{ event.name }}" style="width: 80px; height: 80px; object-fit: cover;">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="mb-1">{{ event.name }}</h5>
+                            <p class="mb-1">{{ event.description|truncate(100) }}</p>
+                            <div>
+                                {% if event.is_free() %}
+                                <span class="badge badge-success">Free Entry</span>
+                                {% else %}
+                                <span class="badge badge-info">{{ event.price }} KZT</span>
+                                {% endif %}
+                                
+                                {% if event.type == 'club' %}
+                                <span class="badge badge-primary">Club Event</span>
+                                {% endif %}
+                                
+                                {% for genre in event.genres %}
+                                <span class="badge badge-secondary">{{ genre.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right text-nowrap">
+                        <p class="mb-1">{{ event.date_time.strftime('%d %b %Y') }}</p>
+                        <p class="mb-0">{{ event.date_time.strftime('%H:%M') }}</p>
+                        <small>{{ event.location.name }}</small>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">No upcoming events scheduled for this club. Check back later!</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Club Members -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Club Members</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% if club.members %}
+                {% for member in club.members %}
+                <li class="list-group-item">
+                    <div class="d-flex align-items-center">
+                        {% if member.photo_url %}
+                        <img src="{{ member.photo_url }}" class="mr-3 rounded-circle" alt="{{ member.get_full_name() }}" style="width: 40px; height: 40px; object-fit: cover;">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='images/default-profile.png') }}" class="mr-3 rounded-circle" alt="{{ member.get_full_name() }}" style="width: 40px; height: 40px; object-fit: cover;">
+                        {% endif %}
+                        <div>
+                            <p class="mb-0">{{ member.get_full_name() }}</p>
+                            {% if member.id == club.head_user_id %}
+                            <small class="text-primary">Club Head</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+                {% else %}
+                <li class="list-group-item text-center text-muted">
+                    No members to display
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <!-- Club Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Club Statistics</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Total Events:</strong> {{ club.events|length }}</p>
+                <p><strong>Upcoming Events:</strong> {{ club.events|selectattr('is_upcoming')|list|length }}</p>
+                <p><strong>Members:</strong> {{ club.members|length }}</p>
+                <p><strong>Subscribers:</strong> {{ club.subscribers|length }}</p>
+                {% if club.rating > 0 %}
+                <p><strong>Rating:</strong> {{ club.rating|round(1) }}/5</p>
+                {% endif %}
+                <p><strong>Established:</strong> {{ club.created_at.strftime('%B %Y') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

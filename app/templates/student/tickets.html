@@ -1,0 +1,145 @@
+{% extends "layout.html" %}
+
+{% block title %}My Tickets - SDU Event Hub{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">My Tickets</h1>
+
+<ul class="nav nav-tabs mb-4" id="ticketTabs" role="tablist">
+    <li class="nav-item">
+        <a class="nav-link active" id="upcoming-tab" data-toggle="tab" href="#upcoming" role="tab">
+            Upcoming Events <span class="badge badge-primary">{{ upcoming_tickets|length }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="past-tab" data-toggle="tab" href="#past" role="tab">
+            Past Events <span class="badge badge-secondary">{{ past_tickets|length }}</span>
+        </a>
+    </li>
+</ul>
+
+<div class="tab-content" id="ticketTabsContent">
+    <!-- Upcoming Events -->
+    <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+        {% if upcoming_tickets %}
+        <div class="row">
+            {% for ticket in upcoming_tickets %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ ticket.event.name }}</h5>
+                        <span class="badge badge-{% if ticket.status == 'paid' %}success{% elif ticket.status == 'pending' %}warning{% else %}info{% endif %}">
+                            {{ ticket.status|capitalize }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p>
+                                    <i class="far fa-calendar-alt"></i> <strong>Date:</strong> {{ ticket.event.date_time.strftime('%d %B %Y') }}<br>
+                                    <i class="far fa-clock"></i> <strong>Time:</strong> {{ ticket.event.date_time.strftime('%H:%M') }}<br>
+                                    <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ ticket.event.location.name }}<br>
+                                    <i class="fas fa-users"></i> <strong>Organizer:</strong> {{ ticket.event.club.name }}
+                                </p>
+                                
+                                {% if ticket.qr_code_path %}
+                                <p><small class="text-muted">Show your QR code at the entrance</small></p>
+                                {% endif %}
+                            </div>
+                            {% if ticket.qr_code_path %}
+                            <div class="col-md-4 text-center">
+                                <img src="{{ ticket.qr_code_path }}" alt="Ticket QR Code" class="img-fluid" style="max-width: 100px;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('student.ticket_detail', ticket_id=ticket.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-ticket-alt"></i> View Ticket
+                        </a>
+                        <a href="{{ url_for('events.event_detail', event_id=ticket.event.id) }}" class="btn btn-outline-secondary btn-sm ml-2">
+                            <i class="fas fa-info-circle"></i> Event Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">You don't have any upcoming events. <a href="{{ url_for('events.index') }}">Browse events</a> to find something interesting!</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Past Events -->
+    <div class="tab-pane fade" id="past" role="tabpanel">
+        {% if past_tickets %}
+        <div class="row">
+            {% for ticket in past_tickets %}
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ ticket.event.name }}</h5>
+                        <span class="badge badge-{% if ticket.status == 'attended' %}success{% elif ticket.status == 'absent' %}danger{% else %}secondary{% endif %}">
+                            {{ ticket.status|capitalize }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <i class="far fa-calendar-alt"></i> <strong>Date:</strong> {{ ticket.event.date_time.strftime('%d %B %Y') }}<br>
+                            <i class="far fa-clock"></i> <strong>Time:</strong> {{ ticket.event.date_time.strftime('%H:%M') }}<br>
+                            <i class="fas fa-map-marker-alt"></i> <strong>Location:</strong> {{ ticket.event.location.name }}<br>
+                            <i class="fas fa-users"></i> <strong>Organizer:</strong> {{ ticket.event.club.name }}
+                        </p>
+                        
+                        {% set has_review = false %}
+                        {% for review in ticket.event.reviews %}
+                            {% if review.user_id == current_user.id %}
+                                {% set has_review = true %}
+                                <div class="mt-3">
+                                    <strong>Your Review:</strong>
+                                    <div class="mb-1">
+                                        {% for i in range(5) %}
+                                            {% if i < review.rating %}
+                                                <i class="fas fa-star text-warning"></i>
+                                            {% else %}
+                                                <i class="far fa-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if review.comment %}
+                                        <p class="small font-italic">"{{ review.comment }}"</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if not has_review and ticket.status in ['paid', 'attended'] %}
+                            <div class="mt-3">
+                                <a href="{{ url_for('events.event_detail', event_id=ticket.event.id) }}" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-star"></i> Leave a Review
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('student.ticket_detail', ticket_id=ticket.id) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-ticket-alt"></i> View Ticket
+                        </a>
+                        <a href="{{ url_for('events.event_detail', event_id=ticket.event.id) }}" class="btn btn-outline-secondary btn-sm ml-2">
+                            <i class="fas fa-info-circle"></i> Event Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">You haven't attended any events yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

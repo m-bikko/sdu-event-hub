@@ -1,0 +1,214 @@
+{% extends "layout.html" %}
+
+{% block title %}Create Event - {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Create Event</h1>
+            <p class="text-muted">For {{ club.name }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{{ url_for('club_head.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Event Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="form-group">
+                            <label for="name"><strong>Event Name</strong> <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="description"><strong>Description</strong> <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                            <small class="form-text text-muted">Describe what this event is about, what attendees can expect, etc.</small>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="location_id"><strong>Location</strong> <span class="text-danger">*</span></label>
+                                <select class="form-control" id="location_id" name="location_id" required>
+                                    <option value="" disabled selected>Select location</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.id }}">{{ location.name }} (Capacity: {{ location.capacity_min }}-{{ location.capacity_max }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="booking_id"><strong>Reserved Time Slot</strong></label>
+                                <select class="form-control" id="booking_id" name="booking_id">
+                                    <option value="">Select a booking (optional)</option>
+                                    {% for booking in bookings %}
+                                    <option value="{{ booking.id }}">
+                                        {{ booking.location.name }} - {{ booking.start_time.strftime('%Y-%m-%d %H:%M') }} to {{ booking.end_time.strftime('%H:%M') }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="form-text text-muted">If you've already reserved a time slot, select it here.</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="date"><strong>Date</strong> <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="date" name="date" required>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="time"><strong>Start Time</strong> <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="time" name="time" required>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="max_attendees"><strong>Max Attendees</strong></label>
+                                <input type="number" class="form-control" id="max_attendees" name="max_attendees" min="1">
+                                <small class="form-text text-muted">Leave empty for unlimited</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="price"><strong>Price (KZT)</strong></label>
+                                <input type="number" class="form-control" id="price" name="price" value="0" min="0" step="500">
+                                <small class="form-text text-muted">Enter 0 for free events, or multiples of 500 KZT</small>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="type"><strong>Event Type</strong> <span class="text-danger">*</span></label>
+                                <select class="form-control" id="type" name="type" required>
+                                    <option value="club">Club Meeting (Members Only)</option>
+                                    <option value="general">General Event (Open to All)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="photo"><strong>Event Image</strong></label>
+                            <input type="file" class="form-control-file" id="photo" name="photo">
+                            <small class="form-text text-muted">Upload an image for your event (optional)</small>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label><strong>Genres</strong></label>
+                                <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                    {% for genre in genres %}
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="genre-{{ genre.id }}" name="genres" value="{{ genre.id }}">
+                                        <label class="custom-control-label" for="genre-{{ genre.id }}">{{ genre.name }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label><strong>Tags</strong></label>
+                                <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                    {% for tag in tags %}
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="tag-{{ tag.id }}" name="tags" value="{{ tag.id }}">
+                                        <label class="custom-control-label" for="tag-{{ tag.id }}">{{ tag.name }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mt-4 text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-calendar-plus"></i> Create Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-info-circle text-info"></i> 
+                            <strong>Event Type:</strong> Club Meetings are mandatory for members and affect Social GPA.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-info-circle text-info"></i> 
+                            <strong>Price:</strong> Free events are more likely to attract attendees.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-info-circle text-info"></i> 
+                            <strong>Booking:</strong> Link your event to a booking to confirm the reservation.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-info-circle text-info"></i> 
+                            <strong>Genres & Tags:</strong> Help students find events they're interested in.
+                        </li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        If you've made a booking, you must create an event within 24 hours or the booking will be cancelled.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-fill date and time if booking is selected
+        const bookingSelect = document.getElementById('booking_id');
+        const locationSelect = document.getElementById('location_id');
+        const dateInput = document.getElementById('date');
+        const timeInput = document.getElementById('time');
+        
+        bookingSelect.addEventListener('change', function() {
+            if (this.value) {
+                // Get the selected option text
+                const selectedOption = this.options[this.selectedIndex];
+                const bookingInfo = selectedOption.textContent;
+                
+                // Extract location ID
+                const locationName = bookingInfo.split(' - ')[0].trim();
+                for (let i = 0; i < locationSelect.options.length; i++) {
+                    if (locationSelect.options[i].textContent.includes(locationName)) {
+                        locationSelect.value = locationSelect.options[i].value;
+                        break;
+                    }
+                }
+                
+                // Extract and set date
+                const dateMatch = bookingInfo.match(/(\d{4}-\d{2}-\d{2})/);
+                if (dateMatch) {
+                    dateInput.value = dateMatch[1];
+                }
+                
+                // Extract and set time
+                const timeMatch = bookingInfo.match(/(\d{2}:\d{2})/);
+                if (timeMatch) {
+                    timeInput.value = timeMatch[1];
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}

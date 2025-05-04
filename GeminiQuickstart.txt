@@ -1,0 +1,26 @@
+Gemini API quickstart
+
+This quickstart shows you how to install your SDK of choice from the new Google Gen AI SDK, and then make your first Gemini API request.
+
+Note: We've recently updated our code snippets to use the new Google GenAI SDK, which is the recommended library for accessing Gemini API. You can find out more about the new SDK and legacy ones on the Libraries page.
+Python:
+
+Install the Gemini API library
+Using Python 3.9+, install the google-genai package using the following pip command:
+
+
+pip install -q -U google-genai
+Make your first request
+Get a Gemini API key in Google AI Studio
+
+Use the generateContent method to send a request to the Gemini API.
+
+
+from google import genai
+
+client = genai.Client(api_key="YOUR_API_KEY")
+
+response = client.models.generate_content(
+    model="gemini-2.0-flash", contents="Explain how AI works in a few words"
+)
+print(response.text)

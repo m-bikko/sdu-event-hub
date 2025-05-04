@@ -1,0 +1,236 @@
+{% extends "layout.html" %}
+
+{% block title %}Reserve Location - {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Reserve Location</h1>
+            <p class="text-muted">For {{ club.name }}</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{{ url_for('club_head.bookings') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Bookings
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Location Reservation</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="form-group">
+                            <label for="location_id"><strong>Location</strong> <span class="text-danger">*</span></label>
+                            <select class="form-control" id="location_id" name="location_id" required>
+                                <option value="" disabled selected>Select location</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}">{{ location.name }} (Capacity: {{ location.capacity_min }}-{{ location.capacity_max }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date"><strong>Date</strong> <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="date" name="date" required min="{{ now.strftime('%Y-%m-%d') }}">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="start_time"><strong>Start Time</strong> <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="end_time"><strong>End Time</strong> <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="end_time" name="end_time" required>
+                                <small class="form-text text-muted">Must be after start time</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mt-4 text-center">
+                            <button type="button" id="check-availability" class="btn btn-info mr-2">
+                                <i class="fas fa-calendar-check"></i> Check Availability
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Reserve Location
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="availability-results" class="card mb-4 d-none">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Availability Results</h5>
+                </div>
+                <div class="card-body" id="availability-content">
+                    <!-- Availability results will be shown here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Reservation Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-info-circle text-info"></i> 
+                            <strong>Important:</strong> Reservations must be linked to an event within 24 hours or they will be automatically cancelled.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-clock text-info"></i> 
+                            <strong>Time Slots:</strong> Each reservation can be made in 1-hour increments.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-calendar-alt text-info"></i> 
+                            <strong>Planning:</strong> Check the availability before making a reservation to avoid conflicts.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-users text-info"></i> 
+                            <strong>Capacity:</strong> Ensure your expected attendance matches the location capacity.
+                        </li>
+                    </ul>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        After reserving a location, create an event promptly to confirm your booking.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Location Information</h5>
+                </div>
+                <div id="location-info" class="card-body text-center">
+                    <p>Select a location to see details</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const locationSelect = document.getElementById('location_id');
+        const locationInfo = document.getElementById('location-info');
+        const checkAvailabilityBtn = document.getElementById('check-availability');
+        const availabilityResults = document.getElementById('availability-results');
+        const availabilityContent = document.getElementById('availability-content');
+        
+        // Show location information when a location is selected
+        locationSelect.addEventListener('change', function() {
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                const locationName = selectedOption.textContent.split(' (')[0];
+                const capacityText = selectedOption.textContent.match(/Capacity: (.*)\)/)[1];
+                
+                locationInfo.innerHTML = `
+                    <h5>${locationName}</h5>
+                    <p class="mb-2">Capacity: ${capacityText} people</p>
+                    <div class="mt-3">
+                        <img src="/static/images/locations/${locationName.toLowerCase().replace(/\s+/g, '-')}.jpg" 
+                            alt="${locationName}" class="img-fluid rounded" 
+                            onerror="this.src='/static/images/default-location.jpg'">
+                    </div>
+                `;
+            } else {
+                locationInfo.innerHTML = '<p>Select a location to see details</p>';
+            }
+        });
+        
+        // Check availability button action
+        checkAvailabilityBtn.addEventListener('click', function() {
+            const locationId = locationSelect.value;
+            const date = document.getElementById('date').value;
+            
+            if (!locationId || !date) {
+                alert('Please select a location and date');
+                return;
+            }
+            
+            // In a real application, this would make an AJAX request to check availability
+            // For this prototype, we'll just simulate a response
+            
+            availabilityResults.classList.remove('d-none');
+            availabilityContent.innerHTML = `
+                <h6>Availability for selected date: ${date}</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>08:00 - 09:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                            <tr>
+                                <td>09:00 - 10:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                            <tr>
+                                <td>10:00 - 11:00</td>
+                                <td class="bg-danger text-white">Booked</td>
+                            </tr>
+                            <tr>
+                                <td>11:00 - 12:00</td>
+                                <td class="bg-danger text-white">Booked</td>
+                            </tr>
+                            <tr>
+                                <td>12:00 - 13:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                            <tr>
+                                <td>13:00 - 14:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                            <tr>
+                                <td>14:00 - 15:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                            <tr>
+                                <td>15:00 - 16:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                            <tr>
+                                <td>16:00 - 17:00</td>
+                                <td class="bg-danger text-white">Booked</td>
+                            </tr>
+                            <tr>
+                                <td>17:00 - 18:00</td>
+                                <td class="bg-success text-white">Available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted">Note: This is example data. In the real application, actual booking data would be shown.</p>
+            `;
+        });
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    /* Additional styles for the booking page */
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}

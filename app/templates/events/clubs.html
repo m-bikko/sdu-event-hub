@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %}Clubs - SDU Event Hub{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Student Clubs</h1>
+
+<div class="row">
+    {% for club in clubs %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            {% if club.photo_url %}
+            <img src="{{ club.photo_url }}" class="card-img-top" alt="{{ club.name }}" style="height: 180px; object-fit: cover;">
+            {% else %}
+            <img src="{{ url_for('static', filename='images/default-club.png') }}" class="card-img-top" alt="{{ club.name }}" style="height: 180px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ club.name }}</h5>
+                {% if club.rating > 0 %}
+                <div class="mb-2">
+                    {% for i in range(5) %}
+                    {% if i < club.rating|round %}
+                    <i class="fas fa-star text-warning"></i>
+                    {% elif i < club.rating and i >= club.rating|round %}
+                    <i class="fas fa-star-half-alt text-warning"></i>
+                    {% else %}
+                    <i class="far fa-star text-warning"></i>
+                    {% endif %}
+                    {% endfor %}
+                    <small class="text-muted ml-1">{{ club.rating|round(1) }}</small>
+                </div>
+                {% endif %}
+                <p class="card-text">{{ club.description|truncate(100) }}</p>
+                
+                {% if club.head %}
+                <p class="small"><strong>Club Head:</strong> {{ club.head.get_full_name() }}</p>
+                {% endif %}
+                
+                <p class="small"><strong>Upcoming Events:</strong> {{ club.events|selectattr('is_upcoming')|list|length }}</p>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('events.club_detail', club_id=club.id) }}" class="btn btn-outline-primary btn-block">View Club</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not clubs %}
+<div class="alert alert-info">
+    <h4 class="alert-heading">No clubs found</h4>
+    <p>There are currently no clubs registered in the system.</p>
+</div>
+{% endif %}
+{% endblock %}

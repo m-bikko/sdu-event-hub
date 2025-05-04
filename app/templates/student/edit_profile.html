@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block title %}Edit Profile - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Edit Profile</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="" enctype="multipart/form-data" class="form-container">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="text-center mb-4">
+                        {% if current_user.photo_url %}
+                        <img src="{{ current_user.photo_url }}" class="rounded-circle" alt="{{ current_user.get_full_name() }}" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='images/default-profile.png') }}" class="rounded-circle" alt="{{ current_user.get_full_name() }}" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.first_name.label(class="form-control-label") }}
+                                {% if form.first_name.errors %}
+                                    {{ form.first_name(class="form-control is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.first_name.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.first_name(class="form-control") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                {{ form.last_name.label(class="form-control-label") }}
+                                {% if form.last_name.errors %}
+                                    {{ form.last_name(class="form-control is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.last_name.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.last_name(class="form-control") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.sdu_id.label(class="form-control-label") }}
+                        {% if form.sdu_id.errors %}
+                            {{ form.sdu_id(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.sdu_id.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.sdu_id(class="form-control") }}
+                        {% endif %}
+                        <small class="form-text text-muted">Your SDU ID is used for verification purposes.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.photo.label(class="form-control-label") }}
+                        {{ form.photo(class="form-control-file") }}
+                        {% if form.photo.errors %}
+                            {% for error in form.photo.errors %}
+                                <span class="text-danger">{{ error }}</span><br>
+                            {% endfor %}
+                        {% endif %}
+                        <small class="form-text text-muted">Upload a new profile photo (JPG, PNG or JPEG only).</small>
+                    </div>
+                    
+                    <div class="form-group mb-0">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('student.profile') }}" class="btn btn-secondary">Cancel</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

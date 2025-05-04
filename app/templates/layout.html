@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="description" content="SDU Event Hub - Discover, attend and organize events at Suleyman Demirel University">
+    <meta name="author" content="SDU Event Hub Team">
+    <meta name="theme-color" content="#4e73df">
+    <title>{% block title %}SDU Event Hub{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://js.stripe.com/v3/"></script>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container position-relative">
+            <a class="navbar-brand" href="{{ url_for('events.index') }}">
+                <i class="fas fa-calendar-alt mr-2"></i>SDU Event Hub
+            </a>
+            <button class="navbar-toggler" type="button" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('events.index') }}">
+                            <i class="fas fa-calendar-week mr-1"></i> Events
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('events.clubs') }}">
+                            <i class="fas fa-users mr-1"></i> Clubs
+                        </a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('student.profile') }}">
+                                <i class="fas fa-user mr-1"></i> Profile
+                            </a>
+                        </li>
+                        {% if current_user.role == 'club_head' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('club_head.dashboard') }}">
+                                    <i class="fas fa-chart-line mr-1"></i> Club Dashboard
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                                    <i class="fas fa-tachometer-alt mr-1"></i> Admin Dashboard
+                                </a>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('chatbot.chat') }}">
+                                <i class="fas fa-comments mr-1"></i> Chat
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="notificationsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-bell mr-1"></i> Notifications
+                                <span class="badge badge-danger" id="notification-badge">3</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right notification-dropdown" aria-labelledby="notificationsDropdown">
+                                <h6 class="dropdown-header">Notifications</h6>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item notification-item" href="{{ url_for('events.index') }}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-primary">
+                                                <i class="fas fa-calendar-alt text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="small text-gray-500">Today</div>
+                                            <span>New event "SDU Tech Meetup" was posted by ACM Club</span>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item notification-item" href="{{ url_for('student.tickets') }}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-success">
+                                                <i class="fas fa-ticket-alt text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="small text-gray-500">Yesterday</div>
+                                            <span>Your ticket for "Programming Workshop" has been confirmed</span>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item notification-item" href="{{ url_for('events.index') }}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="mr-3">
+                                            <div class="icon-circle bg-warning">
+                                                <i class="fas fa-exclamation-triangle text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="small text-gray-500">2 days ago</div>
+                                            <span>Reminder: "Chess Tournament" is happening tomorrow</span>
+                                        </div>
+                                    </div>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-center small text-gray-500" href="{{ url_for('student.profile') }}">
+                                    <i class="fas fa-angle-right mr-1"></i> Show All Notifications
+                                </a>
+                            </div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.register') }}">
+                                <i class="fas fa-user-plus mr-1"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'info' %}info-circle{% elif category == 'warning' %}exclamation-triangle{% elif category == 'danger' %}times-circle{% else %}bell{% endif %} mr-2"></i>
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer mt-5 py-3">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-left mb-3 mb-md-0">
+                    <h5>SDU Event Hub</h5>
+                    <p class="text-muted small mb-0">Discover, attend and organize events at Suleyman Demirel University.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-right">
+                    <div class="mb-2">
+                        <a href="#" class="text-muted mx-2"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-muted mx-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-muted mx-2"><i class="fab fa-telegram-plane"></i></a>
+                        <a href="#" class="text-muted mx-2"><i class="fab fa-vk"></i></a>
+                    </div>
+                    <p class="text-muted small mb-0">© 2025 SDU Event Hub. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Fix for mobile menu - completely replace the default Bootstrap behavior
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get nav elements
+            const navbarToggler = document.querySelector('.navbar-toggler');
+            const navbarCollapse = document.querySelector('.navbar-collapse');
+            const navLinks = document.querySelectorAll('.navbar-collapse .nav-link');
+            
+            // Manually manage the navbar toggler
+            if (navbarToggler && navbarCollapse) {
+                // Prevent document click from closing the menu immediately
+                document.body.addEventListener('click', function(e) {
+                    // Check if we clicked outside the navbar
+                    if (!navbarCollapse.contains(e.target) && !navbarToggler.contains(e.target)) {
+                        // Only close if it's currently open
+                        if (navbarCollapse.classList.contains('show')) {
+                            navbarCollapse.classList.remove('show');
+                        }
+                    }
+                });
+                
+                // Custom toggle function
+                navbarToggler.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent click from bubbling up to document
+                    navbarCollapse.classList.toggle('show');
+                });
+                
+                // Handle mobile nav links click (close menu after navigation)
+                navLinks.forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        // Don't close if it's a dropdown toggle
+                        if (!this.classList.contains('dropdown-toggle')) {
+                            navbarCollapse.classList.remove('show');
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

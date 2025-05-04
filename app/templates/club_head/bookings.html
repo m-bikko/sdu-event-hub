@@ -1,0 +1,296 @@
+{% extends "layout.html" %}
+
+{% block title %}Bookings - {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{{ club.name }} Bookings</h1>
+            <p class="text-muted">Manage your venue reservations</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{{ url_for('club_head.create_booking') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Reserve Location
+            </a>
+            <a href="{{ url_for('club_head.dashboard') }}" class="btn btn-outline-secondary ml-2">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Filter Bookings</h5>
+                        <button class="btn btn-sm btn-link" type="button" data-toggle="collapse" data-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                            <i class="fas fa-filter"></i> Show/Hide Filters
+                        </button>
+                    </div>
+                </div>
+                <div class="collapse" id="filterCollapse">
+                    <div class="card-body">
+                        <form method="GET" id="filter-form">
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label for="filter-date">Date</label>
+                                    <input type="date" class="form-control" id="filter-date" name="date">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="filter-status">Status</label>
+                                    <select class="form-control" id="filter-status" name="status">
+                                        <option value="">All</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="filter-location">Location</label>
+                                    <select class="form-control" id="filter-location" name="location_id">
+                                        <option value="">All</option>
+                                        <!-- Populate with locations -->
+                                        <option value="1">Red Hall</option>
+                                        <option value="2">Blue Hall</option>
+                                        <!-- Add more locations as needed -->
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="filter-event">Linked to Event</label>
+                                    <select class="form-control" id="filter-event" name="has_event">
+                                        <option value="">All</option>
+                                        <option value="yes">Yes</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row justify-content-end">
+                                <div class="form-group col-auto">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Apply Filters
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary ml-2">
+                                        <i class="fas fa-undo"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Bookings -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Upcoming Bookings</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th>Event</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set upcoming_bookings = bookings|selectattr('start_time', 'gt', now)|list %}
+                                {% if upcoming_bookings %}
+                                    {% for booking in upcoming_bookings|sort(attribute='start_time') %}
+                                    <tr>
+                                        <td>{{ booking.location.name }}</td>
+                                        <td>{{ booking.start_time.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ booking.start_time.strftime('%H:%M') }} - {{ booking.end_time.strftime('%H:%M') }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ 'warning' if booking.status == 'pending' else 'success' if booking.status == 'confirmed' else 'danger' }}">
+                                                {{ booking.status|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if booking.event %}
+                                                <a href="{{ url_for('club_head.event_detail', event_id=booking.event.id) }}">{{ booking.event.name }}</a>
+                                            {% else %}
+                                                <span class="text-danger">
+                                                    No Event
+                                                    {% if booking.status == 'pending' %}
+                                                        <i class="fas fa-exclamation-triangle" data-toggle="tooltip" 
+                                                           title="Booking will be cancelled if not linked to an event within 24 hours"></i>
+                                                    {% endif %}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                {% if not booking.event %}
+                                                    <a href="{{ url_for('club_head.create_event') }}?booking_id={{ booking.id }}" 
+                                                       class="btn btn-outline-primary">
+                                                        <i class="fas fa-calendar-plus"></i> Create Event
+                                                    </a>
+                                                {% endif %}
+                                                {% if booking.status != 'cancelled' %}
+                                                    <button type="button" class="btn btn-outline-danger cancel-booking" 
+                                                            data-toggle="modal" 
+                                                            data-target="#cancelBookingModal" 
+                                                            data-booking-id="{{ booking.id }}" 
+                                                            data-location-name="{{ booking.location.name }}"
+                                                            data-booking-time="{{ booking.start_time.strftime('%Y-%m-%d %H:%M') }}">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-3">No upcoming bookings found</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Past Bookings -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Past Bookings</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Status</th>
+                                    <th>Event</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set past_bookings = bookings|selectattr('end_time', 'le', now)|list %}
+                                {% if past_bookings %}
+                                    {% for booking in past_bookings|sort(attribute='start_time', reverse=true) %}
+                                    <tr>
+                                        <td>{{ booking.location.name }}</td>
+                                        <td>{{ booking.start_time.strftime('%Y-%m-%d') }}</td>
+                                        <td>{{ booking.start_time.strftime('%H:%M') }} - {{ booking.end_time.strftime('%H:%M') }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ 'warning' if booking.status == 'pending' else 'success' if booking.status == 'confirmed' else 'danger' }}">
+                                                {{ booking.status|capitalize }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if booking.event %}
+                                                <a href="{{ url_for('club_head.event_detail', event_id=booking.event.id) }}">{{ booking.event.name }}</a>
+                                            {% else %}
+                                                <span class="text-muted">No Event</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3">No past bookings found</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" role="dialog" aria-labelledby="cancelBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelBookingModalLabel">Confirm Cancellation</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this booking?</p>
+                <div class="card bg-light p-3 mb-3">
+                    <div><strong>Location:</strong> <span id="cancel-location-name"></span></div>
+                    <div><strong>Date & Time:</strong> <span id="cancel-booking-time"></span></div>
+                </div>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <form id="cancel-booking-form" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Cancel Booking</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+        
+        // Handle filter form reset
+        const filterForm = document.getElementById('filter-form');
+        if (filterForm) {
+            filterForm.addEventListener('reset', function() {
+                setTimeout(function() {
+                    filterForm.submit();
+                }, 10);
+            });
+        }
+        
+        // Handle cancel booking modal
+        const cancelButtons = document.querySelectorAll('.cancel-booking');
+        const cancelForm = document.getElementById('cancel-booking-form');
+        const cancelLocationName = document.getElementById('cancel-location-name');
+        const cancelBookingTime = document.getElementById('cancel-booking-time');
+        
+        cancelButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const bookingId = this.getAttribute('data-booking-id');
+                const locationName = this.getAttribute('data-location-name');
+                const bookingTime = this.getAttribute('data-booking-time');
+                
+                cancelLocationName.textContent = locationName;
+                cancelBookingTime.textContent = bookingTime;
+                cancelForm.action = `/club-head/bookings/${bookingId}/cancel`;
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

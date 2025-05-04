@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+
+{% block title %}Location Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Location Details</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.update_location', location_id=location.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group">
+                            <label for="name">Location Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ location.name }}" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="capacity_min">Minimum Capacity</label>
+                                <input type="number" class="form-control" id="capacity_min" name="capacity_min" value="{{ location.capacity_min }}" min="0">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="capacity_max">Maximum Capacity</label>
+                                <input type="number" class="form-control" id="capacity_max" name="capacity_max" value="{{ location.capacity_max }}" min="0">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Update Location</button>
+                        <a href="{{ url_for('admin.location_list') }}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+            
+            {% if location.events %}
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Events at this Location</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for event in location.events %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">{{ event.name }}</h5>
+                                    <p class="mb-1 text-muted">
+                                        {{ event.date_time.strftime('%Y-%m-%d %H:%M') }} | 
+                                        Organized by: {{ event.club.name }}
+                                    </p>
+                                </div>
+                                <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline-primary">View</a>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-4">
+                No events are currently scheduled at this location.
+            </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <a href="{{ url_for('admin.location_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Location List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

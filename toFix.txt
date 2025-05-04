@@ -1,0 +1,104 @@
+UndefinedError
+jinja2.exceptions.UndefinedError: 'now' is undefined
+
+Traceback (most recent call last)
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 2213, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 2193, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^Open an interactive python shell in this frame
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 1486, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 1484, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+return current_app.ensure_sync(func)(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/app/views/club_head.py", line 19, in decorated_function
+return f(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/app/views/club_head.py", line 283, in create_booking
+return render_template('club_head/create_booking.html', club=club, locations=locations)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/templating.py", line 151, in render_template
+return _render(app, template, context)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/templating.py", line 132, in _render
+rv = template.render(context)
+     ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/jinja2/environment.py", line 1301, in render
+self.environment.handle_exception()
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/jinja2/environment.py", line 936, in handle_exception
+raise rewrite_traceback_stack(source=source)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/app/templates/club_head/create_booking.html", line 1, in top-level template code
+{% extends "layout.html" %}
+File "/Users/marbik/Desktop/claude projects/WeHack/app/templates/layout.html", line 130, in top-level template code
+{% block content %}{% endblock %}
+File "/Users/marbik/Desktop/claude projects/WeHack/app/templates/club_head/create_booking.html", line 41, in block 'content'
+<input type="date" class="form-control" id="date" name="date" required min="{{ now.strftime('%Y-%m-%d') }}">
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/jinja2/environment.py", line 485, in getattr
+return getattr(obj, attribute)
+       ^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.UndefinedError: 'now' is undefined
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it. For code execution mouse-over the frame you want to debug and click on the console icon on the right side.
+
+You can execute arbitrary Python code in the stack frames and there are some extra helpers available for introspection:
+
+dump() shows all variables in the frame
+dump(obj) dumps all that's known about the object
+Brought to you by DON'T PANIC, your friendly Werkzeug powered traceback interpreter.
+
+NameError
+NameError: name 'current_app' is not defined. Did you mean: 'current_user'?
+
+Traceback (most recent call last)
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 2213, in __call__
+return self.wsgi_app(environ, start_response)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 2193, in wsgi_app
+response = self.handle_exception(e)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 2190, in wsgi_app
+response = self.full_dispatch_request()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 1486, in full_dispatch_request
+rv = self.handle_user_exception(e)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 1484, in full_dispatch_request
+rv = self.dispatch_request()
+     ^^^^^^^^^^^^^^^^^^^^^^^Open an interactive python shell in this frame
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask/app.py", line 1469, in dispatch_request
+return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+return current_app.ensure_sync(func)(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/app/views/club_head.py", line 19, in decorated_function
+return f(*args, **kwargs)
+       ^^^^^^^^^^^^^^^^^^
+File "/Users/marbik/Desktop/claude projects/WeHack/app/views/club_head.py", line 121, in create_event
+photo_path = os.path.join(current_app.root_path, 'static/event_pics', photo_filename)
+                          ^^^^^^^^^^^
+NameError: name 'current_app' is not defined. Did you mean: 'current_user'?
+The debugger caught an exception in your WSGI application. You can now look at the traceback which led to the error.
+To switch between the interactive traceback and the plaintext one, you can click on the "Traceback" headline. From the text traceback you can also create a paste of it. For code execution mouse-over the frame you want to debug and click on the console icon on the right side.
+
+You can execute arbitrary Python code in the stack frames and there are some extra helpers available for introspection:
+
+dump() shows all variables in the frame
+dump(obj) dumps all that's known about the object
+Brought to you by DON'T PANIC, your friendly Werkzeug powered traceback interpreter.
+
+Notification is not navigating to another page, i think they are mock datas right now

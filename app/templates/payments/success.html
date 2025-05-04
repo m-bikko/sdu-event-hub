@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}Payment Successful - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Payment Successful!</h3>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                </div>
+                <h4>Thank you for your purchase!</h4>
+                <p>Your ticket has been confirmed and processed successfully.</p>
+                
+                {% if current_user.telegram_chat_id %}
+                <div class="alert alert-info">
+                    <p><i class="fab fa-telegram"></i> A confirmation has been sent to your Telegram account with the ticket details.</p>
+                </div>
+                {% endif %}
+                
+                <p class="mt-4">You can view your ticket in your profile section or access it directly from your tickets page.</p>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('student.tickets') }}" class="btn btn-primary">
+                        <i class="fas fa-ticket-alt"></i> View My Tickets
+                    </a>
+                    <a href="{{ url_for('events.index') }}" class="btn btn-outline-secondary ml-2">
+                        <i class="fas fa-calendar-alt"></i> Browse More Events
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

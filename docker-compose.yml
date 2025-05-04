@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # Web application
+  web:
+    build: .
+    container_name: sdu_event_hub
+    restart: always
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-default_secret_key_change_in_production}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-8100465500:AAFq0ZVr1EhZUuUksRc3nfUXJUZi2pIXgOI}
+      - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-SDUEventHubBot}
+      - BASE_URL=${BASE_URL:-http://localhost}
+      # Uncomment to use PostgreSQL instead of SQLite
+      # - DATABASE_URL=postgresql://postgres:postgres@db:5432/sdu_event_hub
+    volumes:
+      - app_data:/app/instance
+      - app_static:/app/app/static
+    ports:
+      - "5004:5000"
+    depends_on:
+      - db
+  
+  # Database (PostgreSQL - optional, can be disabled if using SQLite)
+  db:
+    image: postgres:14-alpine
+    container_name: sdu_event_hub_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=sdu_event_hub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  app_data:
+  app_static:
+  postgres_data:

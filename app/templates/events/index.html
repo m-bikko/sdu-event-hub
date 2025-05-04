@@ -1,0 +1,126 @@
+{% extends "layout.html" %}
+
+{% block title %}Events - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="mb-3">Upcoming Events</h1>
+    </div>
+    <div class="col-md-4 text-right">
+        <button class="btn btn-outline-primary" type="button" data-toggle="collapse" data-target="#filterCollapse">
+            <i class="fas fa-filter"></i> Filter Events
+        </button>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="collapse mb-4" id="filterCollapse">
+    <div class="card">
+        <div class="card-body">
+            <form id="event-filter-form" method="GET" action="{{ url_for('events.index') }}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="club_id">Club</label>
+                            <select class="form-control" id="club_id" name="club_id">
+                                <option value="">All Clubs</option>
+                                {% for club in clubs %}
+                                <option value="{{ club.id }}" {% if selected_club_id == club.id %}selected{% endif %}>
+                                    {{ club.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="location_id">Location</label>
+                            <select class="form-control" id="location_id" name="location_id">
+                                <option value="">All Locations</option>
+                                {% for location in locations %}
+                                <option value="{{ location.id }}" {% if selected_location_id == location.id %}selected{% endif %}>
+                                    {{ location.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="genre_id">Genre</label>
+                            <select class="form-control" id="genre_id" name="genre_id">
+                                <option value="">All Genres</option>
+                                {% for genre in genres %}
+                                <option value="{{ genre.id }}" {% if selected_genre_id == genre.id %}selected{% endif %}>
+                                    {{ genre.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="q">Search</label>
+                            <input type="text" class="form-control" id="q" name="q" placeholder="Search events..." value="{{ search_query or '' }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group mb-0 text-right">
+                    <a href="{{ url_for('events.index') }}" class="btn btn-secondary mr-2">Reset</a>
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Events List -->
+{% if events %}
+<div class="row event-list">
+    {% for event in events %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            {% if event.photo_url %}
+            <img src="{{ event.photo_url }}" class="card-img-top" alt="{{ event.name }}">
+            {% else %}
+            <img src="{{ url_for('static', filename='images/event-placeholder.jpg') }}" class="card-img-top" alt="{{ event.name }}">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ event.name }}</h5>
+                <p class="event-meta">
+                    <i class="far fa-calendar-alt"></i> {{ event.date_time.strftime('%d %b %Y, %H:%M') }}<br>
+                    <i class="fas fa-map-marker-alt"></i> {{ event.location.name }}<br>
+                    <i class="fas fa-users"></i> By {{ event.club.name }}
+                </p>
+                <p class="card-text">{{ event.description|truncate(100) }}</p>
+                {% if event.is_free() %}
+                <span class="badge badge-success">Free Entry</span>
+                {% else %}
+                <span class="badge badge-info">{{ event.price }} KZT</span>
+                {% endif %}
+                
+                {% if event.genres %}
+                <div class="mt-2">
+                    {% for genre in event.genres %}
+                    <span class="badge badge-primary">{{ genre.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('events.event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline-primary btn-block">View Details</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    <h4 class="alert-heading">No events found</h4>
+    <p>There are no upcoming events matching your criteria. Try adjusting your filters or check back later.</p>
+</div>
+{% endif %}
+{% endblock %}

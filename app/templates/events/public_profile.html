@@ -1,0 +1,164 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ user.get_full_name() }} - SDU Event Hub{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> This is a public profile view. The information shown here is visible to anyone with the link.
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-header text-center">
+        {% if user.photo_url %}
+        <img src="{{ user.photo_url }}" class="profile-image" alt="{{ user.get_full_name() }}">
+        {% else %}
+        <img src="{{ url_for('static', filename='images/default-profile.png') }}" class="profile-image" alt="{{ user.get_full_name() }}">
+        {% endif %}
+        <h1>{{ user.get_full_name() }}</h1>
+        
+        {% if user.sdu_id %}
+        <p><span class="badge badge-secondary">SDU ID: {{ user.sdu_id }}</span></p>
+        {% endif %}
+        
+        <p>
+            <span class="social-gpa mr-2">Social GPA: {{ user.social_gpa|round(2) }}</span>
+            <span class="bonus-points">{{ user.bonus_points }} Bonus Points</span>
+        </p>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Upcoming Events</h4>
+                </div>
+                <div class="card-body p-0">
+                    {% if upcoming_tickets %}
+                    <div class="list-group list-group-flush">
+                        {% for ticket in upcoming_tickets %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">{{ ticket.event.name }}</h5>
+                                    <p class="mb-1 text-muted">
+                                        <i class="far fa-calendar-alt"></i> {{ ticket.event.date_time.strftime('%d %b %Y, %H:%M') }}<br>
+                                        <i class="fas fa-map-marker-alt"></i> {{ ticket.event.location.name }}
+                                    </p>
+                                </div>
+                                <span class="badge badge-{% if ticket.status == 'paid' %}success{% elif ticket.status == 'pending' %}warning{% else %}info{% endif %} p-2">
+                                    {{ ticket.status|capitalize }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <p>No upcoming events.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Past Events</h4>
+                </div>
+                <div class="card-body p-0">
+                    {% if past_tickets %}
+                    <div class="list-group list-group-flush">
+                        {% for ticket in past_tickets[:5] %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">{{ ticket.event.name }}</h5>
+                                    <p class="mb-1 text-muted">
+                                        <i class="far fa-calendar-alt"></i> {{ ticket.event.date_time.strftime('%d %b %Y, %H:%M') }}<br>
+                                        <i class="fas fa-map-marker-alt"></i> {{ ticket.event.location.name }}
+                                    </p>
+                                </div>
+                                <span class="badge badge-{% if ticket.status == 'attended' %}success{% elif ticket.status == 'absent' %}danger{% else %}secondary{% endif %} p-2">
+                                    {{ ticket.status|capitalize }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if past_tickets|length > 5 %}
+                    <div class="text-center p-3">
+                        <p class="text-muted mb-0">and {{ past_tickets|length - 5 }} more past events</p>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <p>No past events.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Clubs</h4>
+                </div>
+                <div class="card-body p-0">
+                    {% if clubs %}
+                    <div class="list-group list-group-flush">
+                        {% for club in clubs %}
+                        <a href="{{ url_for('events.club_detail', club_id=club.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex align-items-center">
+                                {% if club.photo_url %}
+                                <img src="{{ club.photo_url }}" alt="{{ club.name }}" class="mr-3 rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                {% else %}
+                                <img src="{{ url_for('static', filename='images/default-club.png') }}" alt="{{ club.name }}" class="mr-3 rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                                {% endif %}
+                                <div>
+                                    <h5 class="mb-1">{{ club.name }}</h5>
+                                    {% if club.head_user_id == user.id %}
+                                    <span class="badge badge-info">Club Head</span>
+                                    {% else %}
+                                    <span class="badge badge-secondary">Member</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <p>Not a member of any clubs.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Social Activity</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h2>{{ user.social_gpa|round(2) }}</h2>
+                        <p class="text-muted">Social GPA</p>
+                        <div class="progress mb-4">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ (user.social_gpa/5*100)|round }}%;" 
+                                 aria-valuenow="{{ user.social_gpa|round(2) }}" aria-valuemin="0" aria-valuemax="5">
+                                {{ user.social_gpa|round(2) }}
+                            </div>
+                        </div>
+                        
+                        <h2>{{ user.bonus_points }}</h2>
+                        <p class="text-muted">Bonus Points</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
